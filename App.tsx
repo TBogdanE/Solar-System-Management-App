@@ -13,6 +13,7 @@ const App = () => {
   const ws = useRef<WebSocket | null>(null);
 
   useEffect(() => {
+    //using SOCKETIO library, we try to connect to this IP, on port 82
     connectWebSocket('ws://192.168.0.197:81');
 
     return () => {
@@ -28,15 +29,18 @@ const App = () => {
     }
 
     ws.current = new WebSocket(url);
+    //connect to server
     ws.current.onopen = () => {
       setConnected(true);
       console.log('Connected to WebSocket server');
     };
 
+    //recieve data via port
     ws.current.onmessage = event => {
       const message = event.data;
       console.log('Received message:', message);
 
+      //deserialize json data
       try {
         const jsonData = JSON.parse(message);
         setData(jsonData);
@@ -56,13 +60,16 @@ const App = () => {
     };
   };
 
+  //function used for sending commands to websocket server(in our situation, to send data to ESP)
   const handleToggleRelay = (relayNumber: number) => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      //creating the json obj containing the number of the relay
       const command =
         JSON.stringify({
           command: 'toggleRelay',
           relay: relayNumber,
         }) + '\n';
+      //sending the command to the server
       ws.current.send(command);
       console.log(`Sent command: ${command}`);
     } else {
@@ -70,7 +77,10 @@ const App = () => {
     }
   };
 
+  //UI - button component
   const CustomButton = ({title, onPress, relayName}) => {
+    //checks the data[relayName], data which comes from ESP, the state of the relay
+    //so we can dynamicly render the button based on it's state
     const isOn = data[relayName];
     const buttonStyle = isOn
       ? [styles.button, styles.buttonOn]
@@ -84,6 +94,7 @@ const App = () => {
     );
   };
 
+  //UI - render principal screen
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
@@ -177,6 +188,7 @@ const App = () => {
   );
 };
 
+// UI - design of the components and elements of the app
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
